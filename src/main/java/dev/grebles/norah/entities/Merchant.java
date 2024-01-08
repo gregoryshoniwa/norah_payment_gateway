@@ -1,5 +1,6 @@
 package dev.grebles.norah.entities;
 
+import dev.grebles.norah.enums.MerchantStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,8 +19,7 @@ public class Merchant {
     private String merchantPhone;
     private String merchantEmail;
     private String merchantSecret;
-    private String merchantStatus;
-    private String merchantType;
+    private MerchantStatus merchantStatus;
     private String merchantCountry;
     private String merchantCity;
     private String merchantLogo;

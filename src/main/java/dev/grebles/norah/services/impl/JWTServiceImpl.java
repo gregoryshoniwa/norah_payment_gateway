@@ -2,6 +2,7 @@ package dev.grebles.norah.services.impl;
 
 import dev.grebles.norah.services.JWTService;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwt;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -10,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Service;
@@ -95,6 +97,21 @@ public class JWTServiceImpl implements JWTService {
     private Key getSecretKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
+
+    public String getAuthenticatedUser(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        // Check if the user is authenticated
+        if (authentication != null && authentication.isAuthenticated()) {
+            // Get the username from the principal
+            return authentication.getName();
+        }
+
+        // Return null or handle the case when the user is not authenticated
+        return null;
+    }
+
+
+
 
 
 }

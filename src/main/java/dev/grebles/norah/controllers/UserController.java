@@ -22,12 +22,5 @@ public class UserController {
         return ResponseEntity.ok("Hello User");
     }
 
-    @PostMapping("/create-merchant-account")
-    public ResponseEntity<User> createMerchantAccount(@RequestBody SignUpTransactionRequest signUpTransactionRequest){
-        return ResponseEntity.ok(authService.transactionSignUp(signUpTransactionRequest));
-    }
-    @PostMapping("/merchant-sign-in")
-    public ResponseEntity<JWTAuthResponse> merchantSignIn(@RequestBody SignInRequest signInRequest){
-        return ResponseEntity.ok(authService.transactionSignIn(signInRequest));
-    }
+
 }

@@ -20,14 +20,16 @@ public class NorahApplication implements CommandLineRunner {
 	}
 
 	public void run(String... args) throws Exception {
-		User adminAccount = userRepository.findByRole(Role.ADMIN);
+		User adminAccount = userRepository.findById(1L).orElse(null);
 		if (adminAccount == null) {
 			User user = new User();
 			user.setFirstName("admin");
 			user.setLastName("admin");
 			user.setEmail("admin@norah.co.zw");
 			user.setRole(Role.ADMIN);
-			user.setPassword(new BCryptPasswordEncoder().encode("admin1234"));
+			user.setPassword(new BCryptPasswordEncoder().encode("admin"));
+			user.setPrimaryUser(0L);
+			user.setCompanyName("Norah Payment Gateway");
 			userRepository.save(user);
 			System.out.println("User Saved Successfully");
 		}

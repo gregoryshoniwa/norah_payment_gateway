@@ -5,6 +5,8 @@ import dev.grebles.norah.entities.User;
 
 public interface AuthService {
     User signUp(SignUpRequest signUpRequest);
+    User secondaryAdminSignUp(SignUpRequest signUpRequest);
+    User adminSignUp(SignUpRequest signUpRequest);
     User merchantSignUp(SignUpTransactionRequest signUpTransactionRequest);
     JWTAuthResponse merchantSignIn(SignInRequest signInRequest);
     JWTAuthResponse signIn(SignInRequest signInRequest);

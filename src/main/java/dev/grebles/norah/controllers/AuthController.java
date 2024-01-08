@@ -20,13 +20,18 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("/sign-up")
-    public ResponseEntity<User> signUp(@RequestBody SignUpRequest signUpRequest){
-        return ResponseEntity.ok(authService.signUp(signUpRequest));
+
+    @PostMapping("/admin-sign-up")
+    public ResponseEntity<User> adminSignUp(@RequestBody SignUpRequest signUpRequest){
+        return ResponseEntity.ok(authService.adminSignUp(signUpRequest));
     }
     @PostMapping("/sign-in")
     public ResponseEntity<JWTAuthResponse> signIn(@RequestBody SignInRequest signInRequest){
         return ResponseEntity.ok(authService.signIn(signInRequest));
+    }
+    @PostMapping("/merchant-sign-in")
+    public ResponseEntity<JWTAuthResponse> merchantSignIn(@RequestBody SignInRequest signInRequest){
+        return ResponseEntity.ok(authService.merchantSignIn(signInRequest));
     }
 
     @PostMapping("/refresh-token")

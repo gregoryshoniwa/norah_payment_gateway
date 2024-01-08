@@ -24,9 +24,14 @@ public class User implements UserDetails {
 
     private String firstName;
     private String lastName;
+
+    @Column(name = "email", unique = true)
     private String email;
+
     private String password;
     private Role role;
+    private Long primaryUser;
+    private String companyName;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

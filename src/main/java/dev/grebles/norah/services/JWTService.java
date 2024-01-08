@@ -20,4 +20,6 @@ public interface JWTService {
                                            UserDetails userDetails);
     Date getExpirationDate(String token);
 
+    String getAuthenticatedUser();
+
 }
