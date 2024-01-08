@@ -1,0 +1,8 @@
+FROM openjdk:17-alpine
+
+RUN mkdir /app
+COPY . /app
+WORKDIR /app
+RUN mvn clean -P develop package
+
+CMD java -Duser.timezone=CAT -jar -Dspring.profiles.active=dev /app/target/norah-1.0.0-SNAPSHOT.jar
