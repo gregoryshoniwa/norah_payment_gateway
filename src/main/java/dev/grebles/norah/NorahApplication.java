@@ -7,9 +7,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @SpringBootApplication
+@EnableAsync
 public class NorahApplication implements CommandLineRunner {
 
 	@Autowired
@@ -30,6 +32,7 @@ public class NorahApplication implements CommandLineRunner {
 			user.setPassword(new BCryptPasswordEncoder().encode("admin"));
 			user.setPrimaryUser(0L);
 			user.setCompanyName("Norah Payment Gateway");
+			user.setActivated(true);
 			userRepository.save(user);
 			System.out.println("User Saved Successfully");
 		}

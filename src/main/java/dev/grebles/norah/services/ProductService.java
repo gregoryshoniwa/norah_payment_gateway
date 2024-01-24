@@ -1,4 +1,4 @@
 package dev.grebles.norah.services;
 
-public class ProductService {
+public interface ProductService {
 }

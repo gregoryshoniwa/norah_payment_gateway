@@ -1,13 +1,16 @@
 package dev.grebles.norah.services.impl;
 
 import dev.grebles.norah.dto.*;
+import dev.grebles.norah.entities.Confirmation;
 import dev.grebles.norah.entities.Merchant;
 import dev.grebles.norah.entities.User;
 import dev.grebles.norah.enums.MerchantStatus;
 import dev.grebles.norah.enums.Role;
+import dev.grebles.norah.repository.ConfirmationRepository;
 import dev.grebles.norah.repository.MerchantRepository;
 import dev.grebles.norah.repository.UserRepository;
 import dev.grebles.norah.services.AuthService;
+import dev.grebles.norah.services.EmailService;
 import dev.grebles.norah.services.JWTService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,7 +18,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -24,10 +26,12 @@ import java.util.UUID;
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
+    private final ConfirmationRepository confirmationRepository;
     private final MerchantRepository merchantRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JWTService jwtService;
+    private final EmailService emailService;
 
 
     /**
@@ -38,11 +42,15 @@ public class AuthServiceImpl implements AuthService {
      * @throws IllegalArgumentException if the current authenticated user is invalid
      */
     public User signUp(SignUpRequest signUpRequest){
+        if(userRepository.existsByEmail(signUpRequest.getEmail())){
+            throw new RuntimeException("Email already exists");
+        }
         User user = new User();
         user.setFirstName(signUpRequest.getFirstName());
         user.setLastName(signUpRequest.getLastName());
         user.setEmail(signUpRequest.getEmail());
         user.setRole(Role.USER);
+        user.setActivated(false);
         user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
 
         //get the username from the current authenticated user
@@ -52,8 +60,16 @@ public class AuthServiceImpl implements AuthService {
         //set the primary user will the user id of the current authenticated user
         user.setPrimaryUser(currentUser.getId());
         user.setCompanyName(currentUser.getCompanyName());
+        userRepository.save(user);
 
-        return userRepository.save(user);
+        Confirmation confirmation = new Confirmation(user);
+        confirmationRepository.save(confirmation);
+
+        emailService.sendSimpleMailMessage(user.getFirstName()
+                +" "+user.getLastName(),
+                user.getEmail(),confirmation.getToken());
+
+        return user;
     }
 
     /**
@@ -62,6 +78,9 @@ public class AuthServiceImpl implements AuthService {
      * @return the new user
      */
     public User adminSignUp(SignUpRequest signUpRequest){
+        if(userRepository.existsByEmail(signUpRequest.getEmail())){
+            throw new RuntimeException("Email already exists");
+        }
         User user = new User();
         user.setFirstName(signUpRequest.getFirstName());
         user.setLastName(signUpRequest.getLastName());
@@ -69,8 +88,19 @@ public class AuthServiceImpl implements AuthService {
         user.setRole(Role.ADMIN);
         user.setCompanyName(signUpRequest.getCompanyName());
         user.setPrimaryUser(0L);
+        user.setActivated(false);
         user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
-        return userRepository.save(user);
+        userRepository.save(user);
+
+        Confirmation confirmation = new Confirmation(user);
+        confirmationRepository.save(confirmation);
+
+        emailService.sendSimpleMailMessage(user.getFirstName()
+                        +" "+user.getLastName(),
+                user.getEmail(),confirmation.getToken());
+
+
+        return user;
     }
 
     /**
@@ -81,11 +111,15 @@ public class AuthServiceImpl implements AuthService {
      * @throws IllegalArgumentException if the current authenticated user is invalid
      */
     public User secondaryAdminSignUp(SignUpRequest signUpRequest){
+        if(userRepository.existsByEmail(signUpRequest.getEmail())){
+            throw new RuntimeException("Email already exists");
+        }
         User user = new User();
         user.setFirstName(signUpRequest.getFirstName());
         user.setLastName(signUpRequest.getLastName());
         user.setEmail(signUpRequest.getEmail());
         user.setRole(Role.ADMIN);
+        user.setActivated(false);
         user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
 
         //get the username from the current authenticated user
@@ -95,8 +129,17 @@ public class AuthServiceImpl implements AuthService {
         //set the primary user will the user id of the current authenticated user
         user.setPrimaryUser(currentUser.getId());
         user.setCompanyName(currentUser.getCompanyName());
+        userRepository.save(user);
 
-        return userRepository.save(user);
+        Confirmation confirmation = new Confirmation(user);
+        confirmationRepository.save(confirmation);
+
+        emailService.sendSimpleMailMessage(user.getFirstName()
+                        +" "+user.getLastName(),
+                user.getEmail(),confirmation.getToken());
+
+
+        return user;
     }
 
     /**
@@ -116,7 +159,7 @@ public class AuthServiceImpl implements AuthService {
         // generate unix date to be used as the merchant email
         long unixTime = java.time.Instant.now().getEpochSecond();
         user.setEmail(unixTime + "@norah.com");
-
+        user.setActivated(true);
         user.setRole(Role.TRANSACTION);
         user.setPassword(passwordEncoder.encode(merchantSecret));
 
@@ -162,6 +205,9 @@ public class AuthServiceImpl implements AuthService {
         var refreshToken = jwtService.generateTransactionRefreshToken(new HashMap<>(), user);
         var tokenExpiryDate = jwtService.getExpirationDate(token);
         var refreshTokenExpiryDate = jwtService.getExpirationDate(refreshToken);
+        if(!user.isActivated())
+            throw new RuntimeException("User not enabled through email token.");
+
 
         JWTAuthResponse jwtAuthResponse = new JWTAuthResponse();
         jwtAuthResponse.setToken(token);
@@ -178,12 +224,15 @@ public class AuthServiceImpl implements AuthService {
      * @throws IllegalArgumentException if the credentials are invalid
      */
     public JWTAuthResponse signIn(SignInRequest signInRequest){
+
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(signInRequest.getEmail(),signInRequest.getPassword()));
         var user = userRepository.findByEmail(signInRequest.getEmail()).orElseThrow(() -> new IllegalArgumentException("Invalid Credentials"));
         var token = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), user);
         var tokenExpiryDate = jwtService.getExpirationDate(token);
         var refreshTokenExpiryDate = jwtService.getExpirationDate(refreshToken);
+        if(!user.isActivated())
+            throw new RuntimeException("User not enabled through email token.");
 
         JWTAuthResponse jwtAuthResponse = new JWTAuthResponse();
         jwtAuthResponse.setToken(token);

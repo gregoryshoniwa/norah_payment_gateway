@@ -32,6 +32,7 @@ public class User implements UserDetails {
     private Role role;
     private Long primaryUser;
     private String companyName;
+    private boolean isActivated;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -58,7 +59,6 @@ public class User implements UserDetails {
         return true;
     }
 
-    @Override
     public boolean isEnabled() {
         return true;
     }
