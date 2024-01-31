@@ -65,7 +65,7 @@ public class AuthServiceImpl implements AuthService {
         Confirmation confirmation = new Confirmation(user);
         confirmationRepository.save(confirmation);
 
-        emailService.sendSimpleMailMessage(user.getFirstName()
+        emailService.sendHtmlEmail(user.getFirstName()
                 +" "+user.getLastName(),
                 user.getEmail(),confirmation.getToken());
 
@@ -95,7 +95,7 @@ public class AuthServiceImpl implements AuthService {
         Confirmation confirmation = new Confirmation(user);
         confirmationRepository.save(confirmation);
 
-        emailService.sendSimpleMailMessage(user.getFirstName()
+        emailService.sendHtmlEmail(user.getFirstName()
                         +" "+user.getLastName(),
                 user.getEmail(),confirmation.getToken());
 
@@ -134,7 +134,7 @@ public class AuthServiceImpl implements AuthService {
         Confirmation confirmation = new Confirmation(user);
         confirmationRepository.save(confirmation);
 
-        emailService.sendSimpleMailMessage(user.getFirstName()
+        emailService.sendHtmlEmail(user.getFirstName()
                         +" "+user.getLastName(),
                 user.getEmail(),confirmation.getToken());
 
