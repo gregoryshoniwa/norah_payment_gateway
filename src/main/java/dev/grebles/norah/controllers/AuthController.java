@@ -24,7 +24,10 @@ public class AuthController {
     private final GetTokenService getTokenService;
 
 
-
+    @GetMapping
+    public ResponseEntity<String> helloNorah(){
+        return ResponseEntity.ok("Online");
+    }
     @PostMapping("/sign-in")
     public ResponseEntity<JWTAuthResponse> signIn(@RequestBody SignInRequest signInRequest){
         return ResponseEntity.ok(authService.signIn(signInRequest));
