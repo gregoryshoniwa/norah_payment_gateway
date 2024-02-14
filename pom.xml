@@ -10,20 +10,20 @@
 	</parent>
 	<groupId>dev.grebles</groupId>
 	<artifactId>norah</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>0.0.1-SNAPSHOT</version>
 	<name>norah</name>
 	<description>Multi-Purpose Payment Gateway</description>
 	<profiles>
 		<profile>
 			<id>production</id>
 			<properties>
-				<version>1.0.0-RELEASE</version>
+				<version>0.0.1-RELEASE</version>
 			</properties>
 		</profile>
 		<profile>
 			<id>develop</id>
 			<properties>
-				<version>1.0.0-SNAPSHOT</version>
+				<version>0.0.1-SNAPSHOT</version>
 			</properties>
 		</profile>
 	</profiles>
