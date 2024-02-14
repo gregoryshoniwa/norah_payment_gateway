@@ -5,4 +5,4 @@ COPY . /app
 WORKDIR /app
 RUN mvn clean -P production package
 
-CMD java -Duser.timezone=CAT -jar /app/target/norah-1.0.0-RELEASE.jar
+CMD java -Duser.timezone=CAT -jar /app/target/norah-0.0.1-RELEASE.jar
