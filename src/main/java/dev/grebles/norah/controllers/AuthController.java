@@ -3,6 +3,7 @@ package dev.grebles.norah.controllers;
 import dev.grebles.norah.controllers.responses.HttpResponse;
 import dev.grebles.norah.dto.*;
 import dev.grebles.norah.services.AuthService;
+import dev.grebles.norah.services.GetTokenService;
 import dev.grebles.norah.services.UserService;
 import dev.grebles.norah.utils.Utils;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final UserService userService;
+    private final GetTokenService getTokenService;
 
 
 
@@ -34,6 +36,10 @@ public class AuthController {
     @PostMapping("/refresh-token")
     public ResponseEntity<JWTAuthResponse> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest){
         return ResponseEntity.ok(authService.refreshToken(refreshTokenRequest));
+    }
+    @PostMapping("/iveri-token")
+    public ResponseEntity<TokenDto> iveriToken(@RequestBody TokenDto tokenDto){
+        return ResponseEntity.ok(getTokenService.createToken(tokenDto));
     }
     @PostMapping("/admin-sign-up")
     public ResponseEntity<HttpResponse> adminSignUp(@RequestBody SignUpRequest signUpRequest){
