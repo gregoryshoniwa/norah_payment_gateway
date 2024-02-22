@@ -1,6 +1,7 @@
 package dev.grebles.norah.services;
 
-import dev.grebles.norah.dto.*;
+import dev.grebles.norah.dto.request.RestPassword;
+import dev.grebles.norah.dto.response.*;
 import dev.grebles.norah.entities.User;
 
 public interface AuthService {
@@ -11,4 +12,6 @@ public interface AuthService {
     JWTAuthResponse merchantSignIn(SignInRequest signInRequest);
     JWTAuthResponse signIn(SignInRequest signInRequest);
     JWTAuthResponse refreshToken(RefreshTokenRequest refreshTokenRequest);
+    User restPasswordByUserName(RestPassword restPassword);
+    User forgetPasswordSend(RestPassword restPassword);
 }

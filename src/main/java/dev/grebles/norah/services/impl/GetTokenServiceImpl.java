@@ -1,11 +1,10 @@
 package dev.grebles.norah.services.impl;
 
-import dev.grebles.norah.dto.TokenDto;
+import dev.grebles.norah.dto.request.TokenDto;
 import dev.grebles.norah.services.GetTokenService;
 import org.springframework.stereotype.Service;
 
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;

@@ -37,38 +37,40 @@ public class EmailServiceImpl implements EmailService {
     private final ResourceLoader resourceLoader;
     @Override
     @Async
-    public void sendSimpleMailMessage(String name, String to, String token) {
+    public void sendSimpleMailMessage(String name, String to, String token,
+                                      String template) {
         try {
             SimpleMailMessage simpleMailMessage = new SimpleMailMessage();
             simpleMailMessage.setSubject("Email verification");
             simpleMailMessage.setFrom(fromEmail);
             simpleMailMessage.setTo(to);
-            simpleMailMessage.setText(Utils.formatEmailMessage(name,host,token));
+            simpleMailMessage.setText(Utils.formatEmailMessage(name,host,
+                    token,template));
             emailSender.send(simpleMailMessage);
         }catch (Exception exception){
             throw new RuntimeException(exception.getMessage());
         }
     }
 
-
     @Override
     @Async
-    public void sendHtmlEmail(String name, String to, String token) {
+    public void sendHtmlEmail(String name, String to, String token,
+                              String template,String subject) {
         try {
             MimeMessage simpleMailMessage = getMimeMessage();
             MimeMessageHelper mimeMessageHelper =
                     new MimeMessageHelper(simpleMailMessage,true, UTF_8_ENCODING);
 
             mimeMessageHelper.setPriority(1);
-            mimeMessageHelper.setSubject("Email verification");
+            mimeMessageHelper.setSubject(subject);
             mimeMessageHelper.setFrom(fromEmail);
             mimeMessageHelper.setTo(to);
             //mimeMessageHelper.setText(text,true);
 
             Context context = new Context();
             context.setVariable("name",name);
-            context.setVariable("url",Utils.getVerificationURL(host,token));
-            String text = templateEngine.process("emailTemplate",context);
+            context.setVariable("url",Utils.getVerificationURL(host,token,template));
+            String text = templateEngine.process(template,context);
             //add html email body
             MimeMultipart mimeMultipart = new MimeMultipart("related");
             BodyPart messageBodyPart = new MimeBodyPart();
@@ -89,13 +91,57 @@ public class EmailServiceImpl implements EmailService {
             // Set the MimeMultipart as the content of the MimeMessage
             simpleMailMessage.setContent(mimeMultipart);
 
-
             emailSender.send(simpleMailMessage);
         }catch (Exception exception){
             throw new RuntimeException(exception.getMessage());
         }
     }
 
+    @Override
+    @Async
+    public void sendHtmlEmailPassword(String name, String to, String token,
+                              String template,String subject,String password) {
+        try {
+            MimeMessage simpleMailMessage = getMimeMessage();
+            MimeMessageHelper mimeMessageHelper =
+                    new MimeMessageHelper(simpleMailMessage,true, UTF_8_ENCODING);
+
+            mimeMessageHelper.setPriority(1);
+            mimeMessageHelper.setSubject(subject);
+            mimeMessageHelper.setFrom(fromEmail);
+            mimeMessageHelper.setTo(to);
+            //mimeMessageHelper.setText(text,true);
+
+            Context context = new Context();
+            context.setVariable("name",name);
+            context.setVariable("tempPassword", password);
+            context.setVariable("url",Utils.getVerificationURL(host,token,template));
+            String text = templateEngine.process(template,context);
+            //add html email body
+            MimeMultipart mimeMultipart = new MimeMultipart("related");
+            BodyPart messageBodyPart = new MimeBodyPart();
+            messageBodyPart.setContent(text,"text/html");
+            mimeMultipart.addBodyPart(messageBodyPart);
+            //add images to email body
+
+            // Load and add images to the MimeMultipart
+            String header3 = "static/images/header3.png"; // Adjust the path as
+            // needed
+            Resource imageResource = resourceLoader.getResource("classpath:" + header3);
+
+            messageBodyPart = new MimeBodyPart();
+            messageBodyPart.setDataHandler(new DataHandler(new FileDataSource(imageResource.getFile())));
+            messageBodyPart.setHeader("Content-ID", "header3");
+            mimeMultipart.addBodyPart(messageBodyPart);
+
+            // Set the MimeMultipart as the content of the MimeMessage
+            simpleMailMessage.setContent(mimeMultipart);
+
+            emailSender.send(simpleMailMessage);
+        }catch (Exception exception){
+            throw new RuntimeException(exception.getMessage());
+        }
+    }
 
     private MimeMessage getMimeMessage(){
         return emailSender.createMimeMessage();

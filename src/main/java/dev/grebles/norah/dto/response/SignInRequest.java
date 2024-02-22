@@ -1,4 +1,4 @@
-package dev.grebles.norah.dto;
+package dev.grebles.norah.dto.response;
 
 import lombok.Data;
 

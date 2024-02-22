@@ -1,18 +1,25 @@
 package dev.grebles.norah.services.impl;
 
-import dev.grebles.norah.dto.*;
+import dev.grebles.norah.dto.request.RestPassword;
+import dev.grebles.norah.dto.response.*;
 import dev.grebles.norah.entities.Confirmation;
 import dev.grebles.norah.entities.Merchant;
+import dev.grebles.norah.entities.PasswordReset;
 import dev.grebles.norah.entities.User;
 import dev.grebles.norah.enums.MerchantStatus;
 import dev.grebles.norah.enums.Role;
+import dev.grebles.norah.exception.types.PasswordValidationException;
 import dev.grebles.norah.repository.ConfirmationRepository;
 import dev.grebles.norah.repository.MerchantRepository;
+import dev.grebles.norah.repository.PasswordRestRepository;
 import dev.grebles.norah.repository.UserRepository;
 import dev.grebles.norah.services.AuthService;
 import dev.grebles.norah.services.EmailService;
 import dev.grebles.norah.services.JWTService;
+import dev.grebles.norah.utils.Utils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,11 +34,15 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final ConfirmationRepository confirmationRepository;
+    private final PasswordRestRepository passwordRestRepository;
     private final MerchantRepository merchantRepository;
-    private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JWTService jwtService;
     private final EmailService emailService;
+    @Autowired
+    @Lazy
+    private PasswordEncoder passwordEncoder;
+
 
 
     /**
@@ -42,6 +53,7 @@ public class AuthServiceImpl implements AuthService {
      * @throws IllegalArgumentException if the current authenticated user is invalid
      */
     public User signUp(SignUpRequest signUpRequest){
+
         if(userRepository.existsByEmail(signUpRequest.getEmail())){
             throw new RuntimeException("Email already exists");
         }
@@ -67,7 +79,7 @@ public class AuthServiceImpl implements AuthService {
 
         emailService.sendHtmlEmail(user.getFirstName()
                 +" "+user.getLastName(),
-                user.getEmail(),confirmation.getToken());
+                user.getEmail(),confirmation.getToken(),"emailTemplate","Email verification");
 
         return user;
     }
@@ -78,6 +90,7 @@ public class AuthServiceImpl implements AuthService {
      * @return the new user
      */
     public User adminSignUp(SignUpRequest signUpRequest){
+
         if(userRepository.existsByEmail(signUpRequest.getEmail())){
             throw new RuntimeException("Email already exists");
         }
@@ -97,7 +110,7 @@ public class AuthServiceImpl implements AuthService {
 
         emailService.sendHtmlEmail(user.getFirstName()
                         +" "+user.getLastName(),
-                user.getEmail(),confirmation.getToken());
+                user.getEmail(),confirmation.getToken(),"emailTemplate","Email verification");
 
 
         return user;
@@ -111,6 +124,7 @@ public class AuthServiceImpl implements AuthService {
      * @throws IllegalArgumentException if the current authenticated user is invalid
      */
     public User secondaryAdminSignUp(SignUpRequest signUpRequest){
+
         if(userRepository.existsByEmail(signUpRequest.getEmail())){
             throw new RuntimeException("Email already exists");
         }
@@ -136,7 +150,7 @@ public class AuthServiceImpl implements AuthService {
 
         emailService.sendHtmlEmail(user.getFirstName()
                         +" "+user.getLastName(),
-                user.getEmail(),confirmation.getToken());
+                user.getEmail(),confirmation.getToken(),"emailTemplate","Email verification");
 
 
         return user;
@@ -151,6 +165,7 @@ public class AuthServiceImpl implements AuthService {
      * @throws IllegalArgumentException if the merchant email already exists
      */
     public User merchantSignUp(SignUpTransactionRequest signUpTransactionRequest){
+
         String merchantSecret = UUID.randomUUID().toString();
         User user = new User();
         user.setFirstName(signUpTransactionRequest.getMerchantName());
@@ -214,6 +229,11 @@ public class AuthServiceImpl implements AuthService {
         jwtAuthResponse.setRefreshToken(refreshToken);
         jwtAuthResponse.setTokenExpiryDate(tokenExpiryDate.toString());
         jwtAuthResponse.setRefreshTokenExpiryDate(refreshTokenExpiryDate.toString());
+
+        jwtAuthResponse.setUser_id(user.getId());
+        jwtAuthResponse.setFullName(user.getFirstName() + " " + user.getLastName());
+        jwtAuthResponse.setRole(String.valueOf(user.getRole()));
+        jwtAuthResponse.setEmail(user.getEmail());
         return jwtAuthResponse;
     }
 
@@ -239,6 +259,11 @@ public class AuthServiceImpl implements AuthService {
         jwtAuthResponse.setRefreshToken(refreshToken);
         jwtAuthResponse.setTokenExpiryDate(tokenExpiryDate.toString());
         jwtAuthResponse.setRefreshTokenExpiryDate(refreshTokenExpiryDate.toString());
+
+        jwtAuthResponse.setUser_id(user.getId());
+        jwtAuthResponse.setFullName(user.getFirstName() + " " + user.getLastName());
+        jwtAuthResponse.setRole(String.valueOf(user.getRole()));
+        jwtAuthResponse.setEmail(user.getEmail());
         return jwtAuthResponse;
     }
 
@@ -267,6 +292,62 @@ public class AuthServiceImpl implements AuthService {
         jwtAuthResponse.setRefreshToken(newRefreshToken);
         jwtAuthResponse.setTokenExpiryDate(tokenExpiryDate.toString());
         jwtAuthResponse.setRefreshTokenExpiryDate(refreshTokenExpiryDate.toString());
+
+        jwtAuthResponse.setUser_id(user.getId());
+        jwtAuthResponse.setFullName(user.getFirstName() + " " + user.getLastName());
+        jwtAuthResponse.setRole(String.valueOf(user.getRole()));
+        jwtAuthResponse.setEmail(user.getEmail());
         return jwtAuthResponse;
+    }
+
+    /**
+     * Set a new password for an authenticated user
+     * @param restPassword DTO for the rest authenticated password request
+     * @return the user whose password was changes
+     * @throws IllegalArgumentException if the current authenticated user is invalid
+     * @throws IllegalArgumentException if the merchant email already exists
+     */
+    public User restPasswordByUserName(RestPassword restPassword){
+
+        //get the username from the current authenticated user
+        String authenticatedUser = jwtService.getAuthenticatedUser();
+        User currentUser = userRepository.findByEmail(authenticatedUser).orElseThrow(() -> new IllegalArgumentException("Invalid User"));
+        if(!passwordEncoder.matches(restPassword.getOldPassword(),
+                currentUser.getPassword())){
+            throw new PasswordValidationException("Failed to validate old password.");
+        }
+        if(passwordEncoder.matches(restPassword.getNewPassword(),
+                currentUser.getPassword())){
+            throw new PasswordValidationException("New password is the same " +
+                    "as the old password.");
+        }
+        //set the new password
+        currentUser.setPassword(passwordEncoder.encode(restPassword.getNewPassword()));
+
+        //save the new user and then save the id to the merchant table
+        userRepository.save(currentUser);
+        return currentUser;
+    }
+
+    /**
+     * Send and email to an actual user
+     * @param restPassword DTO for the rest authenticated password request
+     * @return the user whose we emailed about password reset
+     * @throws IllegalArgumentException if the current authenticated user is invalid
+     * @throws IllegalArgumentException if the merchant email already exists
+     */
+    @Override
+    public User forgetPasswordSend(RestPassword restPassword) {
+        User user = userRepository.findByEmail(restPassword.getEmail()).orElseThrow(() -> new IllegalArgumentException("Invalid User"));
+
+        PasswordReset passwordReset = new PasswordReset(user);
+        passwordRestRepository.save(passwordReset);
+
+        emailService.sendHtmlEmail(user.getFirstName()
+                        +" "+user.getLastName(),
+                user.getEmail(),passwordReset.getToken(),"forgotPassword",
+                "Forgot Password Confirmation");
+
+        return user;
     }
 }
